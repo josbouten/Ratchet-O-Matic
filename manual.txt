@@ -9,8 +9,9 @@ How to use Ratchet-O-Matic
 
 1: set the external clock to a slow pattern,
 
-2a: connect that clock’s output to the ‘clock in’ of the Ratchet-O-matic module,
-2b: make sure the mode is set to ‘MUL’ = multiply, the LED should then light up,
+2a: connect the clock to the ‘clock in’ of the Ratchet-O-matic module,
+2b: connect the clock to the 'SHIFT'-input of the 960 sequencer.
+2c: make sure the mode is set to ‘MUL’ = multiply, the LED should then light up,
 That is the default mode, but the device will remember in what state you switched it off, so you may have to set it to ‘MUL’,
 
 3: connect the ‘clock out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
