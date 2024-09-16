@@ -1,0 +1,39 @@
+How to use Ratchet-O-Matic
+==========================
+
+0: make sure you have the following chain of modules prepared:
+0a: an oscillator which produces a constant tone. It should have a V/Oct input,
+0b: patched into a VCA (which has a gate input),
+0c: patched into an amplifier with a speaker.
+0d: prepare a clock source.
+
+1: set the external clock to a slow pattern,
+
+2a: connect that clock’s output to the ‘clock in’ of the Ratchet-O-matic module,
+2b: make sure the mode is set to ‘MUL’ = multiply, the LED should then light up,
+That is the default mode, but the device will remember in what state you switched it off, so you may have to set it to ‘MUL’,
+
+3: connect the ‘clock out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
+
+4: press the “osc off” button of the 960. It should not run on its own oscillator,
+
+5: connect a patch cable from the bottom row of the 960 to the ‘chance-in’ input of Ratchet-O-Matic,
+
+6: connect a patch cable from the middle row of the 960 to the ‘freq-in’ input of Ratchet-O-Matic,
+
+7: connect a patch cable from the top row of the 960 to the ‘V/Oct-in’ of the audio oscillator,
+
+8a: set the bottom row chicken knob of the 960 to ‘X2’,
+8b: set the pots of the bottom row of the 960 all far beyond the center position. This should set the odds for them to fire all the time high enough. The ‘Chance LED’ should be lit all the time,
+
+9a: set the middle chicken knob to ‘X2’,
+9b: set most of the pots of the middle row of the 960 below the center position and a few above the center position. Those few should ratchet, the number of ratchets depends on how high the pot value is set.
+
+10: set the 'Chance knob' on Ratchet-O-Matic to 0, so that the odds are only determined by the input signal on the 'chance'-input
+
+11: set the 'freq knob' on Ratchet-O-Matic to 0, so that the number of ratchets is only determined by the input signal on the 'freq'-input
+
+12a: Start with rather low settings and contrast them with rather high settings to find your bearing. 
+12b: Then finetune and set the number of ratchets you like. Lower some of the odds pots so that not all notes are ratcheted.
+
+Note that the pots can produce a voltage between a max and a min value and that the chicken knobs determine in what range that is. Switching the chicken knob will change the range of all pots of the corresponding row.
