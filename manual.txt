@@ -62,23 +62,25 @@ That is the default mode, but the device will remember in what state you switche
 10a: set the middle chicken knob to ‘X2’,
 10b: set most of the pots of the middle row of the 960 below the center position and a few
      above the center position. Below a certain voltage no clock will be on the output, given a slightly
-     higher voltage one clock pulse will reach the outpy. Higher voltages will result in ratcheting,
-     The higher the voltage the more pulses will be on the output.
+     higher voltage one clock pulse will reach the output. Higher voltages will result in ratcheting.
+     The higher the voltage the more pulses will reach the output,
 
 11: set the 'Chance knob' on Ratchet-O-Matic to 0, so that the odds are only determined
-    by the input signal on the 'chance'-input
+    by the input signal on the 'chance'-input,
 
 12: set the 'freq knob' on Ratchet-O-Matic to 0, so that the number of ratchets is only
-    determined by the input signal on the 'freq'-input
+    determined by the input signal on the 'freq'-input,
 
 13a: Start with rather low settings and contrast them with rather high settings to find your bearing.
-13b: Then finetune and set the number of ratchets you like. Lower some of the odds pots so that not all notes are ratcheted.
+13b: Then fine tune and set the number of ratchets you like. Lower some of the odds pots so
+     that not all notes are ratcheted.
 
 Note:
 
-1: that the pots can produce a voltage between a max and a min value and that the chicken knobs on the 960
-determine in what range that is. Switching the chicken knob will change the range of all pots of the corresponding row.
+1: the pots can produce a voltage between a maximum and a minimum value and that the chicken
+   knobs on the 960 determine in what range that is. Switching the chicken knob will
+   change the range of all pots of the corresponding row.
 
 2: when using the CV inputs, note that Ratchet-O-Matic chooses the highest value of the
    input and the corresponding potentimeter value. This goes for Ratcheting or Division
-   frequency and the odds setting.
+   frequency and the odds settings.
