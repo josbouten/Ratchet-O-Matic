@@ -26,9 +26,13 @@
   The hardware accompanying this code can be found at https://github.com/josbouten/Ratchet-O-Matic
 
   July 15. 2024: v0.1
+  October 13. 2024: v0.2
+  - Shifted scanning of potmeter from interrupt routine to main loop.
+  - Allowed for freq value to be 0.
 
 */
 #include <Arduino.h>
+#include "MillisDelay.hpp"
 
 #define DEBUG
 #define WRITE_TO_EEPROM
@@ -101,13 +105,19 @@ LedCluster ledCluster(LED_DIV_MPU, LED_MULT_MPU, LED_ONE_MPU);
 
 LFSR_RandomNumberGenerator *randomNumberGenerator;
 
+MillisDelay aliveDelay;
+#define BUILT_IN_LED_INTERVAL_TIME 500 // time in mS
+MillisDelay potmeterScanDelay;
+#define POTMETER_SCAN_INTERVAL_TIME 100 // time in mS
+
+
 #define NR_OF_FRACTIONS 7
 
-#define NR_OF_MULT_POT_VALUES 5
-byte potValues4Mult[NR_OF_MULT_POT_VALUES] = { 1, 2, 3, 4, 5 };
+#define NR_OF_MULT_POT_VALUES 6
+byte potValues4Mult[NR_OF_MULT_POT_VALUES] = { 0, 1, 2, 3, 4, 5 };
 
-#define NR_OF_DIV_POT_VALUES 10
-byte potValues4Div[NR_OF_DIV_POT_VALUES] =  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 16 };
+#define NR_OF_DIV_POT_VALUES 11
+byte potValues4Div[NR_OF_DIV_POT_VALUES] =  { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16 };
 
 int getFraction(int nrOfValues, byte potValues[]) {
   // nrOfValues will be 0 ... NR_OF_FRACTIONS - 1 or 0 ... NR_OF_MULT_POT_VALUES - 1
@@ -128,6 +138,16 @@ SettingsObjType_t settings;
 #include "Eeprom.hpp"
 
 Eeprom eeprom;
+
+int getFraction() {
+    int frac;
+    if (settings.device_mode == MULT) {
+      frac = getFraction(NR_OF_MULT_POT_VALUES, potValues4Mult);
+    } else {
+      frac = getFraction(NR_OF_DIV_POT_VALUES, potValues4Div);
+    }
+    return(frac);
+}
 
 int getChanceValue(int nrOfValues) {
   // Use the maximum value of the potentiometer and the CV input value to determine the chance.
@@ -211,57 +231,51 @@ void clockISR() { // Will respond to a rising edge on INT0
     led_builtin_state = !led_builtin_state;
   #endif
 
-  // Allow a dedicated number of values for frac when in MULT mode or in DIV mode.
-  if (settings.device_mode == MULT) {
-    frac = getFraction(NR_OF_MULT_POT_VALUES, potValues4Mult);
+  frac = getFraction();
+  if (frac == 0) {
+    digitalWrite(CLOCK_OUT, OUT_HIGH);
+    // We don't do anything else here.
   } else {
-    frac = getFraction(NR_OF_DIV_POT_VALUES, potValues4Div);
-  }
-
-  if (frac == 1) {
-    ledCluster.showMode(ONE);
-  } else {
-    ledCluster.showMode(settings.device_mode);
-  }
-  if (frac == 1) { // We pass the clock pulse unchanged.
-      irqCnt = 0;
-      // The period time will be in micro seconds.
-      Timer1.setPeriod(cycleTime / 2);
-      Timer1.start();
-      // We start with a high output.
-      digitalWrite(CLOCK_OUT, OUT_HIGH);
-      // The next state will be LOW.
-      outState = OUT_HIGH;
-  } else { // For all values of frac > 1
-    if (settings.device_mode == MULT) {
-      // We are multiplying the clock frequency of the 1st clock signal by starting
-      // a fast timer and counting its cycles until we have seen enough. The clock may
-      // be multiplied by a factor of 1 or higher.
-      irqCnt = 0;
-      // We start with a high output.
-      digitalWrite(CLOCK_OUT, OUT_HIGH);
-      // The next state will be LOW.
-      outState = OUT_HIGH;
-      if (oddsInFavour()) { // Yes, we can ratchet!
-        Timer1.setPeriod(cycleTime / 2 / frac);
-      } else {
+    if (frac == 1) { // We pass the clock pulse unchanged.
+        irqCnt = 0;
+        // The period time will be in micro seconds.
         Timer1.setPeriod(cycleTime / 2);
-      }
-      // The period time will be in micro seconds.
-      Timer1.start();
-    } else { // We are in DIV mode.
-      // We are counting external clock pulses to divide their frequency.
-      irqCnt++;
-      // We leave it up to chance whether we divide or not.
-      if (oddsInFavour()) {
-        if (irqCnt >= frac) {
-          irqCnt = 0;
-          outState = OUT_HIGH;
-          digitalWrite(CLOCK_OUT, OUT_HIGH);
-          return;
+        Timer1.start();
+        // We start with a high output.
+        digitalWrite(CLOCK_OUT, OUT_HIGH);
+        // The next state will be LOW.
+        outState = OUT_HIGH;
+    } else { // For all values of frac > 1
+      if (settings.device_mode == MULT) {
+        // We are multiplying the clock frequency of the 1st clock signal by starting
+        // a fast timer and counting its cycles until we have seen enough. The clock may
+        // be multiplied by a factor of 1 or higher.
+        irqCnt = 0;
+        // We start with a high output.
+        digitalWrite(CLOCK_OUT, OUT_HIGH);
+        // The next state will be LOW.
+        outState = OUT_HIGH;
+        if (oddsInFavour()) { // Yes, we can ratchet!
+          Timer1.setPeriod(cycleTime / 2 / frac);
+        } else {
+          Timer1.setPeriod(cycleTime / 2);
         }
+        // The period time will be in micro seconds.
+        Timer1.start();
+      } else { // We are in DIV mode.
+        // We are counting external clock pulses to divide their frequency.
+        irqCnt++;
+        // We leave it up to chance whether we divide or not.
+        if (oddsInFavour()) {
+          if (irqCnt >= frac) {
+            irqCnt = 0;
+            outState = OUT_HIGH;
+            digitalWrite(CLOCK_OUT, OUT_HIGH);
+            return;
+          }
+        }
+        digitalWrite(CLOCK_OUT, OUT_LOW);
       }
-      digitalWrite(CLOCK_OUT, OUT_LOW);
     }
   }
 }
@@ -385,11 +399,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(EXT_RESET_MPU), resetISR, RISING);
 
     outState = OUT_LOW;
-    if (settings.device_mode == MULT) {
-      frac = getFraction(NR_OF_MULT_POT_VALUES, potValues4Mult);
-    } else {
-      frac = getFraction(NR_OF_DIV_POT_VALUES, potValues4Div);
-    }
+    frac = getFraction();
     debug_print2("Frac: %d\n", frac);
     Timer1.initialize(cycleTime / 2 / frac);
     if (settings.device_mode == MULT) {
@@ -400,17 +410,12 @@ void setup() {
     digitalWrite(CLOCK_OUT, OUT_HIGH);
     Timer1.attachInterrupt(timerInterrupt);
   #endif
-  debug_print("End of Setup()\n");
-}
 
-void alive() {
-  // One second blink period.
-  static unsigned long timeBetweenPotValues = 0;
-  unsigned long thisTime = millis();
-  if ((thisTime - timeBetweenPotValues) > 500) {
-    timeBetweenPotValues = thisTime;
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  }
+  aliveDelay = MillisDelay(BUILT_IN_LED_INTERVAL_TIME);
+  aliveDelay.start();
+  potmeterScanDelay = MillisDelay(POTMETER_SCAN_INTERVAL_TIME);
+  potmeterScanDelay.start();
+  debug_print("End of Setup()\n");
 }
 
 #ifdef INIT_EEPROM
@@ -424,9 +429,22 @@ void loop() {
 #else
   void loop() {
     // Show that we are alive.
-    alive();
+    if (aliveDelay.justFinished()) {
+      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+      aliveDelay.start();
+    }
     // Respond to button clicks.
     button.tick();
     eeprom.tick();
+    // Allow a dedicated number of values for frac when in MULT mode or in DIV mode.
+    if (potmeterScanDelay.justFinished()) {
+      frac = getFraction();
+      if (frac == 1) {
+        ledCluster.showMode(ONE);
+      } else {
+        ledCluster.showMode(settings.device_mode);
+      }
+      potmeterScanDelay.start();
+    }
   }
 #endif

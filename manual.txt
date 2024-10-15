@@ -1,5 +1,5 @@
-How to use Ratchet-O-Matic
-==========================
+Basic use of Ratchet-O-Matic
+============================
 
 0: make sure you have the following chain of modules prepared:
 0a: an oscillator which produces a constant tone. It should have a V/Oct input,
@@ -16,25 +16,69 @@ That is the default mode, but the device will remember in what state you switche
 
 3: connect the ‘clock out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
 
-4: press the “osc off” button of the 960. It should not run on its own oscillator,
+4: choose between 'multiply' and 'divide' using the mode button.
 
-5: connect a patch cable from the bottom row of the 960 to the ‘chance-in’ input of Ratchet-O-Matic,
+5: set a frequency with the potentiometer. Turned fully counterclockwise the frequency = 0, no clock pulse will be sent to the output.
+Turned fully clockwise, the frequency is 5 when in ratchet mode. In divide mode the frequency is 1/16
+When set to 1 the led '1' will light up.
 
-6: connect a patch cable from the middle row of the 960 to the ‘freq-in’ input of Ratchet-O-Matic,
+6: set the odds that a ratchet or divided clock will be passed to the output.
 
-7: connect a patch cable from the top row of the 960 to the ‘V/Oct-in’ of the audio oscillator,
+Have fun.
 
-8a: set the bottom row chicken knob of the 960 to ‘X2’,
-8b: set the pots of the bottom row of the 960 all far beyond the center position. This should set the odds for them to fire all the time high enough. The ‘Chance LED’ should be lit all the time,
+How to use Ratchet-O-Matic incombination with a 960 sequencer
+=============================================================
 
-9a: set the middle chicken knob to ‘X2’,
-9b: set most of the pots of the middle row of the 960 below the center position and a few above the center position. Those few should ratchet, the number of ratchets depends on how high the pot value is set.
+0: make sure you have the following chain of modules prepared:
+0a: an oscillator which produces a constant tone. It should have a V/Oct input,
+0b: patched into a VCA (which has a gate input),
+0c: patched into an amplifier with a speaker.
+0d: prepare a clock source.
 
-10: set the 'Chance knob' on Ratchet-O-Matic to 0, so that the odds are only determined by the input signal on the 'chance'-input
+1: set the external clock to a slow pattern,
 
-11: set the 'freq knob' on Ratchet-O-Matic to 0, so that the number of ratchets is only determined by the input signal on the 'freq'-input
+2a: connect the clock to the 'SHIFT'-input of the 960 sequencer,
+2b: connect the clock output to the ‘clock in’ of the Ratchet-O-matic module,
+2c: make sure the mode is set to ‘MUL’ = multiply, the LED should then light up,
+That is the default mode, but the device will remember in what state you switched it off, so you may have to set it to ‘MUL’,
 
-12a: Start with rather low settings and contrast them with rather high settings to find your bearing. 
-12b: Then finetune and set the number of ratchets you like. Lower some of the odds pots so that not all notes are ratcheted.
+3: connect the ‘clock out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
 
-Note that the pots can produce a voltage between a max and a min value and that the chicken knobs determine in what range that is. Switching the chicken knob will change the range of all pots of the corresponding row.
+4: Choose 'multiply' using the mode button.
+
+5: press the “osc off” button of the 960. It should not run on its own oscillator,
+
+6: connect a patch cable from the bottom row of the 960 to the ‘chance-in’ input of Ratchet-O-Matic,
+
+7: connect a patch cable from the middle row of the 960 to the ‘freq-in’ input of Ratchet-O-Matic,
+
+8: connect a patch cable from the top row of the 960 to the ‘V/Oct-in’ of the audio oscillator,
+
+9a: set the bottom row chicken knob of the 960 to ‘X2’,
+9b: set the pots of the bottom row of the 960 all far beyond the center position.
+    This should set the odds for them to fire all the time high enough.
+    The ‘Chance LED’ should be lit all the time,
+
+10a: set the middle chicken knob to ‘X2’,
+10b: set most of the pots of the middle row of the 960 below the center position and a few
+     above the center position. Below a certain voltage no clock will be on the output, given a slightly
+     higher voltage one clock pulse will reach the outpy. Higher voltages will result in ratcheting,
+     The higher the voltage the more pulses will be on the output.
+
+11: set the 'Chance knob' on Ratchet-O-Matic to 0, so that the odds are only determined
+    by the input signal on the 'chance'-input
+
+12: set the 'freq knob' on Ratchet-O-Matic to 0, so that the number of ratchets is only
+    determined by the input signal on the 'freq'-input
+
+13a: Start with rather low settings and contrast them with rather high settings to find your bearing.
+13b: Then finetune and set the number of ratchets you like. Lower some of the odds pots so that not all notes are ratcheted.
+
+Note:
+
+1: that the pots can produce a voltage between a max and a min value and that the chicken knobs on the 960
+determine in what range that is. Switching the chicken knob will change the range of all pots of the corresponding row.
+
+2: when using the CV inputs, note that Ratchet-O-Matic chooses the highest value of the
+   input and the corresponding potentimeter value. This goes for Ratcheting or Division
+   frequency and the odds setting.
