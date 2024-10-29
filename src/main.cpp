@@ -26,9 +26,17 @@
   The hardware accompanying this code can be found at https://github.com/josbouten/Ratchet-O-Matic
 
   July 15. 2024: v0.1
+  - Initial build of DIV and MULT function.
+
   October 13. 2024: v0.2
   - Shifted scanning of potmeter from interrupt routine to main loop.
   - Allowed for freq value to be 0.
+
+  October 28, 2024: v0.3
+  - Added a mode accessible via double clicking the mode button when in MULT-mode.
+    In this mode a random number of ratchets is produced where the freq-pot and CV-input
+    determine the maximum number of output gates as a result of one input gate signal.
+    The minimum output gates produced is 1.
 
 */
 #include <Arduino.h>
@@ -85,12 +93,15 @@ OneButton button(TOGGLE_DIV_OR_MULT_MPU); // Button has pull up resistor and is 
 #define DIV  1
 #define ONE  2
 #define MULT 3
+#define MAX_MULT 4
 
-#define NR_OF_LED_MODES 3
-byte modes[NR_OF_LED_MODES] = { DIV, ONE, MULT };
+#define NR_OF_LED_MODES 5
 #ifdef DEBUG
-  String mode_str[NR_OF_LED_MODES] = { "DIV", "ONE", "MULT" };
+  String mode_str[NR_OF_LED_MODES] = { "INIT", "DIV", "ONE", "MULT", "MAX_MULT" };
 #endif
+
+#define INITIAL_MULT_MODE MULT
+byte oldMultMode;
 
 const byte NR_OF_LEDS = 6;
 byte allLeds[NR_OF_LEDS] = { LED_DIV_MPU, LED_MULT_MPU, LED_ONE_MPU, LED_CHANCE_MPU, EXT_RESET_MPU, CLOCK_OUT };
@@ -110,9 +121,6 @@ MillisDelay aliveDelay;
 MillisDelay potmeterScanDelay;
 #define POTMETER_SCAN_INTERVAL_TIME 100 // time in mS
 
-
-#define NR_OF_FRACTIONS 7
-
 #define NR_OF_MULT_POT_VALUES 6
 byte potValues4Mult[NR_OF_MULT_POT_VALUES] = { 0, 1, 2, 3, 4, 5 };
 
@@ -127,8 +135,19 @@ int getFraction(int nrOfValues, byte potValues[]) {
   return(potValues[index]);
 }
 
+void getFraction(int nrOfValues, byte potValues[], byte *minValue, byte *maxValue) {
+  // nrOfValues will be 0 ... NR_OF_FRACTIONS - 1 or 0 ... NR_OF_MULT_POT_VALUES - 1
+  int minVal = analogRead(FREQ_POT_MPU);
+  int minIndex = map(minVal, 0, 1024, 0, nrOfValues);
+  int maxVal = analogRead(FREQ_IN_MPU);
+  int maxIndex = map(maxVal, 0, 1024, 0, nrOfValues);
+  *minValue = potValues[minIndex];
+  *maxValue = potValues[maxIndex];
+}
+
+
 typedef struct SettingsObjType {
-  volatile byte device_mode; // Either DIV or MULT, but never ONE.
+  volatile byte device_mode; // Either DIV, MULT or MAX_MULT, but never ONE.
   volatile byte dummy[3];    // Add dummy bytes until total size of struct is integer multiple of sizeof(MARKER)
 } SettingsObjType_t ;
 
@@ -137,6 +156,8 @@ SettingsObjType_t settings;
 #include <EEPROM.h>
 #include "Eeprom.hpp"
 
+#define FOUR_BITS 4
+
 Eeprom eeprom;
 
 int getFraction() {
@@ -144,16 +165,26 @@ int getFraction() {
     if (settings.device_mode == MULT) {
       frac = getFraction(NR_OF_MULT_POT_VALUES, potValues4Mult);
     } else {
-      frac = getFraction(NR_OF_DIV_POT_VALUES, potValues4Div);
+      byte minValue, maxValue;
+      if (settings.device_mode == MAX_MULT) {
+        // Use the pot for the lower limit and the CV-value for the upper limit.
+        getFraction(NR_OF_MULT_POT_VALUES, potValues4Mult, &minValue, &maxValue);
+        // We limit frac to a range from 1 ... maxFrac.
+        frac = randomNumberGenerator->getRandomNumber(minValue, maxValue + 1, FOUR_BITS);
+      } else { // mode must be DIV
+        frac = getFraction(NR_OF_DIV_POT_VALUES, potValues4Div);
+      }
     }
     return(frac);
 }
 
 int getChanceValue(int nrOfValues) {
   // Use the maximum value of the potentiometer and the CV input value to determine the chance.
+  // result will be [ 0 ... 100 ]
   int maxValue = max(analogRead(CHANCE_POT_MPU), analogRead(CHANCE_IN_MPU));
-  //debug_print3("chance_level: %d, cv value: %d\n", potValue, cvValue);
-  return(map(maxValue, 0, 1024, 0, nrOfValues));
+  long result = map(maxValue, 0, 1023, 0, nrOfValues);
+  //debug_print2("chance: %ld\n", result);
+  return(int(result));
 }
 
 //
@@ -174,30 +205,21 @@ volatile byte irqCounter = 0;
   volatile bool led_builtin_state = true;
 #endif
 
-#define MIN_CHANCE_LEVEL 11
-#define MAX_CHANCE_LEVEL 89
+#define MIN_CHANCE_LEVEL 0
+#define MAX_CHANCE_LEVEL 100
 
 #define SEVEN_BITS 7
-
-bool allwaysOn = false;
 
 bool oddsInFavour() {
   // We want the chance level to increase when turning the potentiometer to the right.
   int chanceLevel = getChanceValue(100);
-  if (chanceLevel < MIN_CHANCE_LEVEL) {
-    digitalWrite(LED_CHANCE_MPU, false);
+  if (randomNumberGenerator->getRandomNumber(MIN_CHANCE_LEVEL, MAX_CHANCE_LEVEL, SEVEN_BITS) < chanceLevel) {
+    digitalWrite(LED_CHANCE_MPU, LED_ON);
+    return(true);
+  } else {
+    digitalWrite(LED_CHANCE_MPU, LED_OFF);
     return(false);
   }
-  if (chanceLevel > MAX_CHANCE_LEVEL) {
-    digitalWrite(LED_CHANCE_MPU, true);
-    return(true);
-  }
-  // Generate a random value in the range [MIN_CHANCE_LEVEL, MAX_CHANCE_LEVEL]
-  // and check whether this is below the chanceLevel. If so, return TRUE,
-  // else return FALSE.
-  bool prob = randomNumberGenerator->getRandomNumber(MIN_CHANCE_LEVEL, MAX_CHANCE_LEVEL, SEVEN_BITS) < chanceLevel;
-  digitalWrite(LED_CHANCE_MPU, prob);
-  return(prob);
 }
 
 void timerInterrupt() {
@@ -210,8 +232,6 @@ void timerInterrupt() {
 }
 
 void clockISR() { // Will respond to a rising edge on INT0
-  // Here we handle the 1st half of the cluster
-  // which outputs to CLOCK_OUT_MPU
   Timer1.stop();
   // We measure the cycle time in MICRO seconds.
   thisTime = micros();
@@ -232,9 +252,10 @@ void clockISR() { // Will respond to a rising edge on INT0
   #endif
 
   frac = getFraction();
+  // debug_print2("%d ", frac);
   if (frac == 0) {
-    digitalWrite(CLOCK_OUT, OUT_HIGH);
-    // We don't do anything else here.
+    // No gate is send. The odds are of no importance, so the led is turned off.
+    digitalWrite(CLOCK_OUT, OUT_LOW);
   } else {
     if (frac == 1) { // We pass the clock pulse unchanged.
         irqCnt = 0;
@@ -246,7 +267,7 @@ void clockISR() { // Will respond to a rising edge on INT0
         // The next state will be LOW.
         outState = OUT_HIGH;
     } else { // For all values of frac > 1
-      if (settings.device_mode == MULT) {
+      if (settings.device_mode != DIV) { // We are in MULT or MAX_MULT mode
         // We are multiplying the clock frequency of the 1st clock signal by starting
         // a fast timer and counting its cycles until we have seen enough. The clock may
         // be multiplied by a factor of 1 or higher.
@@ -255,10 +276,16 @@ void clockISR() { // Will respond to a rising edge on INT0
         digitalWrite(CLOCK_OUT, OUT_HIGH);
         // The next state will be LOW.
         outState = OUT_HIGH;
-        if (oddsInFavour()) { // Yes, we can ratchet!
+        // If the chance level is higher than some probability value then the odds are in
+        // favour of ratcheting (producing more than 1 output gate during this clock cycle).
+        if (settings.device_mode == MAX_MULT) {
           Timer1.setPeriod(cycleTime / 2 / frac);
         } else {
-          Timer1.setPeriod(cycleTime / 2);
+          if (oddsInFavour()) { // Yes, we can ratchet!
+            Timer1.setPeriod(cycleTime / 2 / frac);
+          } else {
+            Timer1.setPeriod(cycleTime / 2);
+          }
         }
         // The period time will be in micro seconds.
         Timer1.start();
@@ -266,6 +293,8 @@ void clockISR() { // Will respond to a rising edge on INT0
         // We are counting external clock pulses to divide their frequency.
         irqCnt++;
         // We leave it up to chance whether we divide or not.
+        // If the chance level is higher than some probability number, then the odds are in
+        // favour of producing an output gate.
         if (oddsInFavour()) {
           if (irqCnt >= frac) {
             irqCnt = 0;
@@ -291,27 +320,38 @@ void resetISR() {
     Timer1.stop();
     outState = OUT_LOW;
     digitalWrite(CLOCK_OUT, OUT_LOW);
-    debug_print(".");
-    // As soon as the next clockISR() occurs, the new output value is set synchronous to the clock
+    // As soon as the next clockISR() occurs, the new output value is set synchronously to the clock
   }
 }
 
-void button_click() {
+void toggleBetweenDivAndMultModes() {
   // If the mult/div button was pressed,
   // toggle the settings.device_mode.
   if (settings.device_mode == DIV) {
-    settings.device_mode = MULT;
+    settings.device_mode = oldMultMode;
   } else {
-    if (settings.device_mode == MULT) {
-      settings.device_mode = DIV;
-    }
-  }
-  if (frac == 1) {
-    // Light up an additional led.
-    ledCluster.showMode(ONE);
+    settings.device_mode = DIV;
   }
   eeprom.writeSettings();
-  ledCluster.showMode(settings.device_mode);
+  ledCluster.setMode(settings.device_mode);
+}
+
+void toggleBetweenMultModes() {
+  // When in MULT or MAX_MULT mode, toggle between the two and update eeprom.
+  if (settings.device_mode != DIV) {
+    if (settings.device_mode == MULT) {
+      settings.device_mode = MAX_MULT;
+      oldMultMode = MAX_MULT;
+      // We do not use the chance pot or CV value in this mode.
+      // so the led will be lit all the time.
+      digitalWrite(LED_CHANCE_MPU, LED_ON);
+    } else {
+      settings.device_mode = MULT;
+      oldMultMode = MULT;
+    }
+    ledCluster.setMode(settings.device_mode);
+    eeprom.writeSettings();
+  }
 }
 
 void setup() {
@@ -337,14 +377,23 @@ void setup() {
       } else {
         debug_print2("eeprom read  address after writing: %d\n", eeprom.getReadAddress());
         debug_print2("eeprom write address after writing: %d\n", eeprom.getWriteAddress());
-        debug_print2("Mode (at setup): %s\n", mode_str[settings.device_mode - 1].c_str());
       }
     } else {
       eeprom.read(&settings);
     }
-
+    debug_print3("Mode (at setup): %d %s\n", settings.device_mode, mode_str[settings.device_mode].c_str());
     // Show that all leds work.
     ledTester.test();
+    if (settings.device_mode != DIV) {
+      oldMultMode = settings.device_mode;
+    } else {
+      oldMultMode = INITIAL_MULT_MODE;
+    }
+    if (settings.device_mode == MAX_MULT) {
+      // We do not use the chance pot or CV value in this mode.
+      // so the led will be lit all the time.
+      digitalWrite(LED_CHANCE_MPU, LED_ON);
+    }
 
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -378,11 +427,13 @@ void setup() {
     //
 
     // Attach functions to the buttons.
-    button.attachClick(button_click);
+    button.attachClick(toggleBetweenDivAndMultModes);
+
+    button.attachDoubleClick(toggleBetweenMultModes);
 
     // Now set the LEDs according to the defaults.
-    ledCluster.showMode(settings.device_mode);
-    debug_print2("Setting mode to: %s\n", mode_str[settings.device_mode - 1].c_str());
+    ledCluster.setMode(settings.device_mode);
+    debug_print3("Setting mode to %d %s\n", settings.device_mode, mode_str[settings.device_mode].c_str());
 
     // Initialize CycleTime before starting the ISR routine.
     oldTime = micros();
@@ -394,7 +445,6 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(EXT_CLOCK_IN), clockISR, RISING);
     pinMode(CLOCK_OUT, OUTPUT); // Setting output after setting counter modes as advised by the ATmega321P datasheet.
 
-
     debug_print2("Attaching interrupt 1 to pin D%d for external reset.\n", EXT_RESET_MPU);
     attachInterrupt(digitalPinToInterrupt(EXT_RESET_MPU), resetISR, RISING);
 
@@ -402,7 +452,7 @@ void setup() {
     frac = getFraction();
     debug_print2("Frac: %d\n", frac);
     Timer1.initialize(cycleTime / 2 / frac);
-    if (settings.device_mode == MULT) {
+    if (settings.device_mode != DIV) { // Mode is MULT or MAX_MULT
       Timer1.start();
     } else {
       Timer1.stop();
@@ -433,18 +483,25 @@ void loop() {
       digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
       aliveDelay.start();
     }
-    // Respond to button clicks.
-    button.tick();
-    eeprom.tick();
-    // Allow a dedicated number of values for frac when in MULT mode or in DIV mode.
+    // A getFraction call is included here so that when there is a slow clock
+    // or there is no clock a value for frac is determined and the ONE-led is
+    // set accordingly.
     if (potmeterScanDelay.justFinished()) {
       frac = getFraction();
+      // debug_print2("%d ", frac);
       if (frac == 1) {
-        ledCluster.showMode(ONE);
-      } else {
-        ledCluster.showMode(settings.device_mode);
+        ledCluster.setMode(ONE);
+      }
+       else {
+        ledCluster.setMode(settings.device_mode);
       }
       potmeterScanDelay.start();
     }
+    // Respond to button clicks.
+    button.tick();
+    // Update the eeprom when necessary.
+    eeprom.tick();
+    // Update the 3 mode leds when necessary.
+    ledCluster.tick();
   }
 #endif

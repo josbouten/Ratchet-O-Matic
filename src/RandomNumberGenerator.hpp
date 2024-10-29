@@ -85,6 +85,7 @@ class LFSR_RandomNumberGenerator {
             Here are some statistics for 100.000 numbers:
             32 bits: 1567 mS -> 15.67 micro seconds per calculation
             7 bits :  309 mS ->  3.09 miro seconds per calculation
+            Note, this method will generate a random number excluding the value for upperLimit !
         */
         int getRandomNumber(int lowerLimit, int upperLimit, int nrOfBits) {
             if (lowerLimit >= upperLimit) {

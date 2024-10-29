@@ -1,36 +1,59 @@
+Ratchet-O-Matic
+===============
+There are 3 modes, DIV, MULT and MAX_MULT.
+In DIV-mode the input gates are devided by a number.
+This number is determined by the maximum value read from the FREQ-pot and the FREQ-CV input.
+Whether any division is done depends on the highest value read from the CHANCE-pot and CHANCE CV-input.
+This value is converted into a probability running from 0 to 1. A higher probability makes it more likely that
+a gate signal will be generated.
+The gate in frequency can be divide by 1, 2, 3, 4, 5, 6, 7, 8, 9 and 16.
+
+In MULT-mode the input gates are multiplied by a factor 0, 1, 2, 3, 4 or 5.
+This multiplication number is determined by the maximum value read from the FREQ-pot and the FREQ-CV input.
+If the factor is 1 then the '1'-led will light up.
+
+In MULT_MAX mode the number of ratchets varies at random from a minimum value set by the FREQ-knob
+to a maximum value determined by the CV-input value.
+
+Switching from DIV to MULT or DIV to MAX_MULT can be done by pressing the mode button once.
+Switching from MAX_MULT to MULT and vv can be done in either mode by quickly double pressing the mode button.
+
 Basic use of Ratchet-O-Matic
 ============================
 
 0: make sure you have the following chain of modules prepared:
-0a: an oscillator which produces a constant tone. It should have a V/Oct input,
-0b: patched into a VCA (which has a gate input),
+0a: an oscillator which produces a constant signal. Its pitch should be set. This oscillator is
+0b: patched into a VCA (which has a gate input), which is
 0c: patched into an amplifier with a speaker.
 0d: prepare a clock source.
 
-1: set the external clock to a slow pattern,
-
+1: set the external clock to a slow pattern
+   For beginners this makes it easier to discover the things Ratchet-O-Matic can do for you.
 2a: connect the clock to the 'SHIFT'-input of the 960 sequencer,
 2b: connect the clock output to the ‘clock in’ of the Ratchet-O-matic module,
-2c: make sure the mode is set to ‘MUL’ = multiply, the LED should then light up,
-That is the default mode, but the device will remember in what state you switched it off, so you may have to set it to ‘MUL’,
+2c: make sure the mode is set to ‘MUL’ (MULT-led is continuously lit) or 'MULT_MAX' (MULT-led will flash).
+    MULT is the default mode when first switched on. After that the device will remember which
+    state you last set it to.
 
-3: connect the ‘clock out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
+3: connect the ‘gate out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
 
-4: choose between 'multiply' and 'divide' using the mode button.
+4: choose the mode (MULT/DIV/MAX_MULT) using the mode button.
 
-5: set a frequency with the potentiometer. Turned fully counterclockwise the frequency = 0, no clock pulse will be sent to the output.
-Turned fully clockwise, the frequency is 5 when in ratchet mode. In divide mode the frequency is 1/16
-When set to 1 the led '1' will light up.
+5: set a frequency with the FREQ-knob. Turned fully counterclockwise the frequency = 0,
+   no gate signal pulse will be sent to the output.
+   Turned fully clockwise, the frequency is 5 when in ratchet mode. In divide mode the frequency is 1/16
+   The clock in frequency can be divide by 1, 2, 3, 4, 5, 6, 7, 8, 9 and 16 in DIV mode.
+   The clock in frequency is multiplied by a factor 0, 1, 2, 3, 4 or 5. in (MAX_)MULT mode.
+   When set to 1 the '1'-led will light up.
 
-6: set the odds that a ratchet or divided clock will be passed to the output.
-
-Have fun.
+6: use the CHANCE-knob or connect a cv value to the chance-in input to set the odds that a ratchet or divided
+   clock will be passed to the output. In MAX_MULT the chance pot and cv-value are ignored.
 
 How to use Ratchet-O-Matic incombination with a 960 sequencer
 =============================================================
 
 0: make sure you have the following chain of modules prepared:
-0a: an oscillator which produces a constant tone. It should have a V/Oct input,
+0a: an oscillator which produces a constant signal (either tone or noise),
 0b: patched into a VCA (which has a gate input),
 0c: patched into an amplifier with a speaker.
 0d: prepare a clock source.
@@ -40,11 +63,14 @@ How to use Ratchet-O-Matic incombination with a 960 sequencer
 2a: connect the clock to the 'SHIFT'-input of the 960 sequencer,
 2b: connect the clock output to the ‘clock in’ of the Ratchet-O-matic module,
 2c: make sure the mode is set to ‘MUL’ = multiply, the LED should then light up,
-That is the default mode, but the device will remember in what state you switched it off, so you may have to set it to ‘MUL’,
+That is the default mode, but the device will remember in what state you switched it off,
+so you may have to set it to ‘MUL’,
 
-3: connect the ‘clock out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
+3: connect the ‘gate out’ of Ratchet-O-Matic to the ‘gate’ of the VCA
 
-4: Choose 'multiply' using the mode button.
+4: Choose the MULT-mode using the mode button. The MULT-led should be lit continously.
+   When the MULT-led is flashing you are in the MAX_MULT mode. Double click the button to
+   return to the MULT mode.
 
 5: press the “osc off” button of the 960. It should not run on its own oscillator,
 
@@ -64,23 +90,52 @@ That is the default mode, but the device will remember in what state you switche
      above the center position. Below a certain voltage no clock will be on the output, given a slightly
      higher voltage one clock pulse will reach the output. Higher voltages will result in ratcheting.
      The higher the voltage the more pulses will reach the output,
+10c: when using a noise generator you can skip setting the 960 pots in the top row, otherwise choose
+     set a tone sequence.
 
 11: set the 'Chance knob' on Ratchet-O-Matic to 0, so that the odds are only determined
     by the input signal on the 'chance'-input,
 
 12: set the 'freq knob' on Ratchet-O-Matic to 0, so that the number of ratchets is only
-    determined by the input signal on the 'freq'-input,
+    determined by the input signal on the 'freq'-input. The number of gate pulses per step can
+    be set using the potmeters to be 0 up to 5.
 
-13a: Start with rather low settings and contrast them with rather high settings to find your bearing.
-13b: Then fine tune and set the number of ratchets you like. Lower some of the odds pots so
-     that not all notes are ratcheted.
+13a: Start with rather low ratchet settings and contrast them with rather high settings to find your bearing.
+13b: Then fine tune and set the number of ratchets you like. Lower some of the odds pots so that not all
+     notes are ratcheted.
+
+How to get a random number of ratchets
+======================================
+Double click the mode button until the MULT-led flashes. You are in MAX_MULT mode now.
+In this mode, the settings of the "freq"-knob determines the minimum number of
+ratchets i.e. output gates. The maximum number of gates is determined by the CV value.
+
+The lowest number of gates you can set when the knob is set to 0.
+When set to 1 the '1'-led will light up to signal this. For higher values of the Potentiometers,
+the '1'-led is off and the number of gates is 2 or more.
+
+The chance knob and CV input are of no effect on the number of gate outs in this mode.
+
+How to use Ratchet-O-Matic as a clock divider
+=============================================
+Make the same connections as above and set the mode to 'DIV' using the mode button.
+Now the highest value of 'freq'-pot and 'freq-in' cv-value determines the division factor.
+DIV can divide by 1, 2, 3, 4, 5, 6, 7, 8, 9 and 16. A value of 1 means that for each note a gate
+os produced, so you should hear all notes. For higher values notes will be skipped. This can lead
+to interesting polyrhythms.
 
 Note:
 
-1: the pots can produce a voltage between a maximum and a minimum value and that the chicken
+1: the pots can produce a voltage between a maximum and a minimum value and the chicken
    knobs on the 960 determine in what range that is. Switching the chicken knob will
    change the range of all pots of the corresponding row.
 
 2: when using the CV inputs, note that Ratchet-O-Matic chooses the highest value of the
-   input and the corresponding potentimeter value. This goes for Ratcheting or Division
+   input and the corresponding knob value. This goes for Ratcheting or Division
    frequency and the odds settings.
+
+2: when in MULT or DIV mode Ratchet-O-Matic chooses the highest value of the
+   input and the corresponding knob value to determine the number of gates or the
+   odds of producing a gate. In these modes Ratchet-O-Matic can be used without any CV inputs.
+   In MAX_MULT however, a CV value on the FREQ-in is necessary. It will set the maximum count of
+   ratchets while the FREQ-knob will set the minimum number of ratchets.

@@ -146,7 +146,7 @@ class Eeprom {
                         debug_print2("eeprom: read  address after writing: %d\n", getReadAddress());
                         debug_print2("eeprom: write address after writing: %d\n", getWriteAddress());
                     }
-                    debug_print2("eeprom: device mode: %s\n", mode_str[settings.device_mode - 1].c_str());
+                    debug_print3("eeprom: device mode: %d %s\n", settings.device_mode, mode_str[settings.device_mode].c_str());
                     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
                     delay(100);
                     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));

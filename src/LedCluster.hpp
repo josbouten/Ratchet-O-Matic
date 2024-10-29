@@ -4,57 +4,66 @@
 #include <Arduino.h>
 #include <LibPrintf.h>
 #include "Debug.hpp"
+#include "Led.hpp"
 
-#define NR_OF_LEDS     3
 #define NR_TESTS       5
-#define LED_TEST_DELAY 100
-
-class LedCluster { // a group of 3 leds that shiw MULT or DIV mode and the ONE status.
+class LedCluster { // a group of 3 leds that show MULT or DIV mode and the ONE status.
 
   private:
     byte pinA;
     byte pinB;
     byte pinC;
-    byte ledState[NR_OF_LEDS]; // [0 ... NR_OF_LEDS - 1]
+    Led ledDiv;
+    Led ledMult;
+    Led ledOne;
 
   public:
-
     LedCluster(byte _pinA, byte _pinB, byte _pinC): pinA(_pinA), pinB(_pinB), pinC(_pinC) {
-      pinMode(pinA, OUTPUT); // DIV
-      pinMode(pinB, OUTPUT); // MULT
-      pinMode(pinC, OUTPUT); // ONE
+      ledDiv  = Led(pinA, LED_OFF); // DIV
+      ledMult = Led(pinB, LED_OFF); // MULT
+      ledOne  = Led(pinC, LED_OFF); // ONE
       // Initialize all leds to off.
-      showMode(INIT);
+      setMode(INIT);
     }
 
-    void showMode(byte mode) {
+    void setMode(byte mode) {
       switch(mode) {
         case INIT:
-          ledState[0] = 0;
-          ledState[1] = 0;
-          ledState[2] = 0;
+          ledDiv.setState(LED_OFF);
+          ledMult.setState(LED_OFF);
+          ledOne.setState(LED_OFF);
           break;
         case DIV:
-          ledState[0] = 1;
-          ledState[1] = 0;
-          ledState[2] = 0;
+          ledDiv.setState(LED_ON);
+          ledMult.setState(LED_OFF);
+          ledOne.setState(LED_OFF);
           break;
         case ONE:
-          ledState[2] = 1;
+          ledOne.setState(LED_ON);
           // We leave the other 2 leds as they were.
           break;
         case MULT:
-          ledState[0] = 0;
-          ledState[1] = 1;
-          ledState[2] = 0;
+          ledOne.setState(LED_OFF);
+          ledDiv.setState(LED_OFF);
+          ledMult.setState(LED_ON);
+          break;
+        case MAX_MULT:
+          ledOne.setState(LED_OFF);
+          ledDiv.setState(LED_OFF);
+          ledMult.setState(LED_SLOW_FLASH);
+          // We leave the other 2 leds as they were.
           break;
         default:
           // This should never happen!
           debug_print2("setMode unknown mode: %0x02\n", mode);
       }
-      digitalWrite(pinA, ledState[0]);
-      digitalWrite(pinB, ledState[1]);
-      digitalWrite(pinC, ledState[2]);
     }
-  };
+
+    void tick() {
+      ledDiv.tick();
+      ledMult.tick();
+      ledOne.tick();
+    }
+};
+
 #endif
